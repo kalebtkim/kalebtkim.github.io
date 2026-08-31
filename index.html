@@ -2,10 +2,66 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=Portfolio.pdf">
-<title>Kaleb Kim — Portfolio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kaleb Kim — Engineering Portfolio</title>
+<style>
+:root{
+  --bg:#0E1113;
+  --line:#262C31;
+  --text:#E4E7E9;
+  --muted:#8B959C;
+  --accent:#C9A227;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px;margin:0 auto;padding:0 20px}
+a{color:var(--accent)}
+
+header{padding:44px 0 26px;border-bottom:1px solid var(--line)}
+h1{font-size:clamp(28px,5vw,40px);margin:0 0 10px;letter-spacing:-.02em}
+header p{color:var(--muted);margin:0 0 6px;max-width:62ch}
+.links{margin-top:18px;font-size:15px}
+.links a{margin-right:18px;text-decoration:none;border-bottom:1px solid var(--accent);padding-bottom:1px}
+
+.viewer{padding:26px 0 10px}
+.viewer object,.viewer iframe{
+  width:100%;height:78vh;min-height:520px;
+  border:1px solid var(--line);border-radius:4px;background:#000;display:block;
+}
+.fallback{padding:40px 20px;text-align:center;color:var(--muted)}
+
+footer{padding:20px 0 60px;color:var(--muted);font-size:14px}
+@media(max-width:640px){
+  .viewer object,.viewer iframe{height:60vh;min-height:380px}
+}
+</style>
 </head>
 <body>
-<p>Redirecting to <a href="Portfolio.pdf">Portfolio.pdf</a>…</p>
+
+<header><div class="wrap">
+  <h1>Kaleb Kim</h1>
+  <p>Freshman in General Engineering at Texas A&amp;M, heading into Aerospace. CAD, CNC machining, and simulation work.</p>
+  <div class="links">
+    <a href="portfolio.pdf" target="_blank" rel="noopener">Open PDF</a>
+    <a href="portfolio.pdf" download>Download</a>
+    <a href="mailto:kaleb.t.kim@outlook.com">Email</a>
+  </div>
+</div></header>
+
+<div class="viewer"><div class="wrap">
+  <object data="portfolio.pdf" type="application/pdf">
+    <div class="fallback">
+      Your browser can't display the PDF inline.
+      <a href="portfolio.pdf">Open it in a new tab</a> instead.
+    </div>
+  </object>
+</div></div>
+
+<footer><div class="wrap">Kaleb Kim · Texas A&amp;M · Class of 2030</div></footer>
+
 </body>
 </html>
