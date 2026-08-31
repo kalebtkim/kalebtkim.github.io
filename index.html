@@ -18,31 +18,28 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
 }
-.wrap{max-width:1000px;margin:0 auto;padding:0 20px}
 a{color:var(--accent)}
 
-header{padding:44px 0 26px;border-bottom:1px solid var(--line)}
+header{padding:40px 24px 24px;border-bottom:1px solid var(--line)}
+.inner{max-width:1400px;margin:0 auto}
 h1{font-size:clamp(28px,5vw,40px);margin:0 0 10px;letter-spacing:-.02em}
-header p{color:var(--muted);margin:0 0 6px;max-width:62ch}
-.links{margin-top:18px;font-size:15px}
+header p{color:var(--muted);margin:0;max-width:62ch}
+.links{margin-top:16px;font-size:15px}
 .links a{margin-right:18px;text-decoration:none;border-bottom:1px solid var(--accent);padding-bottom:1px}
 
-.viewer{padding:26px 0 10px}
-.viewer iframe{
-  width:100%;height:78vh;min-height:520px;
-  border:1px solid var(--line);border-radius:4px;background:#000;display:block;
-}
-.fallback{color:var(--muted);font-size:14px;margin-top:10px;text-align:center}
+/* pages */
+#pdf{max-width:1400px;margin:0 auto;padding:0}
+.page{position:relative;width:100%;display:block;line-height:0}
+.page canvas{width:100%;height:auto;display:block}
+.page a.lnk{position:absolute;display:block}
 
-footer{padding:20px 0 60px;color:var(--muted);font-size:14px}
-@media(max-width:640px){
-  .viewer iframe{height:60vh;min-height:380px}
-}
+#status{padding:60px 24px;text-align:center;color:var(--muted);font-size:14px}
+footer{padding:24px;color:var(--muted);font-size:14px;text-align:center}
 </style>
 </head>
 <body>
 
-<header><div class="wrap">
+<header><div class="inner">
   <h1>Kaleb Kim</h1>
   <p>Freshman in General Engineering at Texas A&amp;M, heading into Aerospace. CAD, CNC machining, and simulation work.</p>
   <div class="links">
@@ -52,12 +49,101 @@ footer{padding:20px 0 60px;color:var(--muted);font-size:14px}
   </div>
 </div></header>
 
-<div class="viewer"><div class="wrap">
-  <iframe src="Portfolio.pdf" title="Kaleb Kim portfolio"></iframe>
-  <p class="fallback">Not loading? <a href="Portfolio.pdf">Open it in a new tab</a>.</p>
-</div></div>
+<div id="pdf"></div>
+<div id="status">Loading…</div>
 
-<footer><div class="wrap">Kaleb Kim · Texas A&amp;M · Class of 2030</div></footer>
+<footer>Kaleb Kim · Texas A&amp;M · Class of 2030</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+const FILE = 'Portfolio.pdf';
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const container = document.getElementById('pdf');
+const status = document.getElementById('status');
+const pageEls = [];
+let pdfDoc = null;
+
+async function renderAll(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const width = container.clientWidth;
+  container.innerHTML = '';
+  pageEls.length = 0;
+
+  for (let n = 1; n <= pdfDoc.numPages; n++){
+    const page = await pdfDoc.getPage(n);
+    const base = page.getViewport({scale: 1});
+    const scale = width / base.width;
+    const vp = page.getViewport({scale: scale});
+
+    const wrap = document.createElement('div');
+    wrap.className = 'page';
+    wrap.id = 'p' + n;
+    wrap.style.height = vp.height + 'px';
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.floor(vp.width * dpr);
+    canvas.height = Math.floor(vp.height * dpr);
+    wrap.appendChild(canvas);
+    container.appendChild(wrap);
+    pageEls[n] = wrap;
+
+    await page.render({
+      canvasContext: canvas.getContext('2d'),
+      viewport: page.getViewport({scale: scale * dpr})
+    }).promise;
+
+    const anns = await page.getAnnotations();
+    for (const a of anns){
+      if (a.subtype !== 'Link') continue;
+      const r = vp.convertToViewportRectangle(a.rect);
+      const x = Math.min(r[0], r[2]), y = Math.min(r[1], r[3]);
+      const w = Math.abs(r[2] - r[0]), h = Math.abs(r[3] - r[1]);
+      const el = document.createElement('a');
+      el.className = 'lnk';
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.style.width = w + 'px';
+      el.style.height = h + 'px';
+
+      if (a.url){
+        el.href = a.url;
+        el.target = '_blank';
+        el.rel = 'noopener';
+      } else if (a.dest){
+        el.href = '#';
+        el.addEventListener('click', async ev => {
+          ev.preventDefault();
+          try {
+            const d = typeof a.dest === 'string'
+              ? await pdfDoc.getDestination(a.dest) : a.dest;
+            const idx = await pdfDoc.getPageIndex(d[0]);
+            pageEls[idx + 1].scrollIntoView({behavior:'smooth', block:'start'});
+          } catch(e){}
+        });
+      }
+      wrap.appendChild(el);
+    }
+  }
+}
+
+pdfjsLib.getDocument(FILE).promise.then(async doc => {
+  pdfDoc = doc;
+  status.style.display = 'none';
+  await renderAll();
+}).catch(() => {
+  status.innerHTML =
+    'Could not load the PDF inline. <a href="' + FILE + '">Open it directly</a>.';
+});
+
+let t;
+window.addEventListener('resize', () => {
+  if (!pdfDoc) return;
+  clearTimeout(t);
+  t = setTimeout(renderAll, 300);
+});
+</script>
 
 </body>
 </html>
